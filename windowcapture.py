@@ -67,7 +67,7 @@ class WindowCapture:
         # convert the raw data into a format opencv can read
         # dataBitMap.SaveBitmapFile(cDC, 'debug.bmp')
         signedIntsArray = dataBitMap.GetBitmapBits(True)
-        img = np.fromstring(signedIntsArray, dtype="uint8")
+        img = np.frombuffer(signedIntsArray, dtype="uint8")
         img.shape = (h, w, 4)
 
         # free resources
@@ -115,7 +115,8 @@ class WindowCapture:
         return None
 
     # active window
-    def active_window(self, hwnd):
+    def active_window(self):
+        hwnd = self.hwnd
         tup = win32gui.GetWindowPlacement(hwnd)
         if tup[1] == win32con.SW_SHOWMINIMIZED:
             win32gui.ShowWindow(hwnd, 9)

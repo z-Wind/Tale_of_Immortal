@@ -9,8 +9,6 @@ class Vision:
 
     # properties
     needle_img = None
-    needle_w = 0
-    needle_h = 0
     method = None
     hsv_filter = None
     threshold = 0.9
@@ -21,22 +19,33 @@ class Vision:
         # https://docs.opencv.org/4.2.0/d4/da8/group__imgcodecs.html
         self.needle_img = cv.imread(needle_img_path, cv.IMREAD_UNCHANGED)
 
-        # Save the dimensions of the needle image
-        self.needle_w = self.needle_img.shape[1]
-        self.needle_h = self.needle_img.shape[0]
-
         # There are 6 methods to choose from:
         # TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
         self.method = method
 
         # property
-        self.hsv_filter = hsv_filter
-        self.set_hsv_filter_from_controls()
+        if hsv_filter:
+            self.hsv_filter = hsv_filter
+        else:
+            self.hsv_filter = HsvFilter(0, 0, 0, 179, 255, 255, 0, 0, 0, 0)
         self.threshold = threshold
 
-    def find(self, haystack_img, max_results=10):
+    def resize(self, img, scale_down, interpolation=cv.INTER_NEAREST):
+        w, h = img.shape[:2]
+        w = int(w // scale_down)
+        h = int(h // scale_down)
+
+        return cv.resize(img, (w, h), interpolation=interpolation)
+
+    def find(self, haystack_img, max_results=10, scale_down=None):
+        needle_img = self.needle_img
+        if scale_down:
+            haystack_img = self.resize(haystack_img, scale_down)
+            needle_img = self.resize(needle_img, scale_down)
+
+        needle_w, needle_h = needle_img.shape[:2]
         # run the OpenCV algorithm
-        result = cv.matchTemplate(haystack_img, self.needle_img, self.method)
+        result = cv.matchTemplate(haystack_img, needle_img, self.method)
 
         # Get the all the positions from the match result that exceed our threshold
         locations = np.where(result >= self.threshold)
@@ -53,7 +62,7 @@ class Vision:
         # First we need to create the list of [x, y, w, h] rectangles
         rectangles = []
         for loc in locations:
-            rect = [int(loc[0]), int(loc[1]), self.needle_w, self.needle_h]
+            rect = [int(loc[0]), int(loc[1]), needle_w, needle_h]
             # Add every box to the list twice in order to retain single (non-overlapping) boxes
             rectangles.append(rect)
             rectangles.append(rect)
@@ -71,6 +80,8 @@ class Vision:
             print("Warning: too many results, raise the threshold.")
             rectangles = rectangles[:max_results]
 
+        if scale_down:
+            rectangles = rectangles * scale_down
         return rectangles
 
     # given a list of [x, y, w, h] rectangles returned by find(), convert those into a list of
@@ -142,22 +153,22 @@ class Vision:
 
         # create trackbars for bracketing.
         # OpenCV scale for HSV is H: 0-179, S: 0-255, V: 0-255
-        cv.createTrackbar("HMin", self.TRACKBAR_WINDOW, 0, 179, nothing)
-        cv.createTrackbar("SMin", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("VMin", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("HMax", self.TRACKBAR_WINDOW, 0, 179, nothing)
-        cv.createTrackbar("SMax", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("VMax", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        # Set default value for Max HSV trackbars
-        cv.setTrackbarPos("HMax", self.TRACKBAR_WINDOW, 179)
-        cv.setTrackbarPos("SMax", self.TRACKBAR_WINDOW, 255)
-        cv.setTrackbarPos("VMax", self.TRACKBAR_WINDOW, 255)
+        cv.createTrackbar("HMin", self.TRACKBAR_WINDOW, self.hsv_filter.hMin, 179, nothing)
+        cv.createTrackbar("SMin", self.TRACKBAR_WINDOW, self.hsv_filter.sMin, 255, nothing)
+        cv.createTrackbar("VMin", self.TRACKBAR_WINDOW, self.hsv_filter.vMin, 255, nothing)
+        cv.createTrackbar("HMax", self.TRACKBAR_WINDOW, self.hsv_filter.hMax, 179, nothing)
+        cv.createTrackbar("SMax", self.TRACKBAR_WINDOW, self.hsv_filter.sMax, 255, nothing)
+        cv.createTrackbar("VMax", self.TRACKBAR_WINDOW, self.hsv_filter.vMax, 255, nothing)
+        # # Set default value for Max HSV trackbars
+        # cv.setTrackbarPos("HMax", self.TRACKBAR_WINDOW, 179)
+        # cv.setTrackbarPos("SMax", self.TRACKBAR_WINDOW, 255)
+        # cv.setTrackbarPos("VMax", self.TRACKBAR_WINDOW, 255)
 
         # trackbars for increasing/decreasing saturation and value
-        cv.createTrackbar("SAdd", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("SSub", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("VAdd", self.TRACKBAR_WINDOW, 0, 255, nothing)
-        cv.createTrackbar("VSub", self.TRACKBAR_WINDOW, 0, 255, nothing)
+        cv.createTrackbar("SAdd", self.TRACKBAR_WINDOW, self.hsv_filter.sAdd, 255, nothing)
+        cv.createTrackbar("SSub", self.TRACKBAR_WINDOW, self.hsv_filter.sSub, 255, nothing)
+        cv.createTrackbar("VAdd", self.TRACKBAR_WINDOW, self.hsv_filter.vAdd, 255, nothing)
+        cv.createTrackbar("VSub", self.TRACKBAR_WINDOW, self.hsv_filter.vSub, 255, nothing)
 
     # returns an HSV filter object based on the control GUI values
     def get_hsv_filter_from_controls(self):

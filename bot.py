@@ -1,29 +1,27 @@
-import multiprocessing as mp
-from time import sleep, time
+from time import sleep
 import win32gui, win32api, win32con
 
 
 class TOMBot:
 
     # constants
-    IGNORE_RADIUS = 50
+    IGNORE_RADIUS = 0
 
     # properties
     targets = []
-    window_title = None
     wincap = None
     center = None
     click_type = None
 
-    def __init__(self, window_title, wincap, click_type):
+    def __init__(self, wincap, click_type, ignore_radius=0):
         # window infomation
-        self.window_title = window_title
         self.wincap = wincap
         if self.wincap.cropped_w:
             self.center = (self.wincap.cropped_w // 2, self.wincap.cropped_h // 2)
         else:
             self.center = (self.wincap.w // 2, self.wincap.h // 2)
         self.click_type = click_type
+        self.IGNORE_RADIUS = ignore_radius
 
     def click(self, x, y, click_type="left"):
         if click_type == "left":
@@ -37,7 +35,7 @@ class TOMBot:
 
         win32api.SetCursorPos((x, y))
         win32api.mouse_event(down, 0, 0)
-        sleep(0.02)
+        # sleep(0.02)
         win32api.mouse_event(up, 0, 0)
 
     def click_targets(self):
@@ -53,7 +51,7 @@ class TOMBot:
             # that are relative to the game screenshot to a position on our
             # screen
             screen_x, screen_y = self.wincap.get_screen_position(target)
-            print("click to x:{} y:{}".format(screen_x, screen_y))
+            # print("click to x:{} y:{}".format(screen_x, screen_y))
 
             self.click(screen_x, screen_y, self.targets[1])
 
