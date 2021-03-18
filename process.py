@@ -9,6 +9,8 @@ import numpy as np
 import multiprocessing as mp
 from enum import Enum
 
+DEBUG_CLICK_MODE = False
+
 
 class State(Enum):
     INITIALIZING = 0
@@ -39,6 +41,10 @@ def on_release(key):
         main.prev_state = main.state
         main.state = State.DEBUG_INIT
         print("Debug")
+    elif key == keyboard.Key.f4:
+        global DEBUG_CLICK_MODE
+        DEBUG_CLICK_MODE = not DEBUG_CLICK_MODE
+        print("Debug Switch Click Mode", DEBUG_CLICK_MODE)
 
 
 # 需在另一個 module 中，multiprocess 才會正常工作
@@ -119,7 +125,7 @@ def main(
             main.state = State.TERMINATE
         elif main.state == State.DEBUG_INIT:
             wincap = WindowCapture(window_name=window_title, cropped_rectangle=cropped_rectangle)
-            vision = Vision(match_path, threshold, hsv_filter)
+            vision = Vision(match_path, threshold, hsv_filter, scale_down=scale_down)
             vision.init_control_gui()
             bot = TOMBot(wincap, click_type, ignore_radius)
 
@@ -128,8 +134,12 @@ def main(
         elif main.state == State.DEBUG:
             screenshot = wincap.get_screenshot()
             processed_image = vision.apply_hsv_filter(screenshot, finetune=True)
-            rectangles = vision.find(processed_image, scale_down=scale_down)
+            scaled_image = vision.resize(processed_image, scale_down)
+            rectangles = vision.find(processed_image)
             targets = vision.get_click_points(rectangles)
+            if DEBUG_CLICK_MODE:
+                bot.update_targets(targets)
+                bot.click_targets()
 
             # draw the detection results onto the original image
             output_image = vision.draw_rectangles(screenshot, rectangles)
@@ -138,6 +148,8 @@ def main(
 
             # display the processed image
             cv.imshow("Processed", processed_image)
+            cv.imshow("ScaleDown Needle", vision.needle_img_scale_down)
+            cv.imshow("ScaleDown Processed", scaled_image)
             cv.imshow("Matches", output_image)
 
         elif main.state == State.WAIT:
@@ -156,6 +168,7 @@ def main(
 
 
 def get_screenshot(window_title, cropped_rectangle, ch_send_wincap, ch_send_screenshot):
+    print("Get Screenshot Start...")
     # initialize the WindowCapture class
     wincap = WindowCapture(window_name=window_title, cropped_rectangle=cropped_rectangle)
     try:
@@ -173,8 +186,9 @@ def get_screenshot(window_title, cropped_rectangle, ch_send_wincap, ch_send_scre
 
 
 def img_process(match_path, threshold, hsv_filter, scale_down, ch_recv_screenshot, ch_send_targets):
+    print("Image Process Start...")
     # initialize the Vision class
-    vision = Vision(match_path, threshold, hsv_filter)
+    vision = Vision(match_path, threshold, hsv_filter, scale_down=scale_down)
     # 不同的 process 皆需重建 control gui
     # vision.init_control_gui()
 
@@ -185,7 +199,7 @@ def img_process(match_path, threshold, hsv_filter, scale_down, ch_recv_screensho
         processed_image = vision.apply_hsv_filter(screenshot)
 
         # do object detection
-        rectangles = vision.find(processed_image, scale_down=scale_down)
+        rectangles = vision.find(processed_image)
 
         if rectangles.size != 0:
             targets = vision.get_click_points(rectangles)
@@ -196,6 +210,7 @@ def img_process(match_path, threshold, hsv_filter, scale_down, ch_recv_screensho
 
 
 def click_targets(ch_recv_wincap, click_type, ignore_radius, ch_recv):
+    print("Click Targets Start...")
     wincap = ch_recv_wincap.recv()
     # initialize the bot
     bot = TOMBot(wincap, click_type, ignore_radius)

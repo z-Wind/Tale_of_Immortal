@@ -9,15 +9,22 @@ class Vision:
 
     # properties
     needle_img = None
+    needle_img_scale_down = None
     method = None
     hsv_filter = None
     threshold = 0.9
 
     # constructor
-    def __init__(self, needle_img_path, threshold, hsv_filter, method=cv.TM_CCOEFF_NORMED):
+    def __init__(
+        self, needle_img_path, threshold, hsv_filter, method=cv.TM_CCOEFF_NORMED, scale_down=None
+    ):
         # load the image we're trying to match
         # https://docs.opencv.org/4.2.0/d4/da8/group__imgcodecs.html
+        self.scale_down = scale_down
         self.needle_img = cv.imread(needle_img_path, cv.IMREAD_UNCHANGED)
+        self.needle_img_scale_down = self.resize(
+            self.needle_img, self.scale_down, interpolation=cv.INTER_AREA
+        )
 
         # There are 6 methods to choose from:
         # TM_CCOEFF, TM_CCOEFF_NORMED, TM_CCORR, TM_CCORR_NORMED, TM_SQDIFF, TM_SQDIFF_NORMED
@@ -31,17 +38,19 @@ class Vision:
         self.threshold = threshold
 
     def resize(self, img, scale_down, interpolation=cv.INTER_NEAREST):
-        w, h = img.shape[:2]
-        w = int(w // scale_down)
-        h = int(h // scale_down)
-
-        return cv.resize(img, (w, h), interpolation=interpolation)
-
-    def find(self, haystack_img, max_results=10, scale_down=None):
-        needle_img = self.needle_img
         if scale_down:
-            haystack_img = self.resize(haystack_img, scale_down)
-            needle_img = self.resize(needle_img, scale_down)
+            h, w = img.shape[:2]
+            w = int(w // scale_down)
+            h = int(h // scale_down)
+
+            return cv.resize(img, (w, h), interpolation=interpolation)
+
+        return img
+
+    def find(self, haystack_img, max_results=10):
+        needle_img = self.needle_img_scale_down
+        if self.scale_down:
+            haystack_img = self.resize(haystack_img, self.scale_down)
 
         needle_w, needle_h = needle_img.shape[:2]
         # run the OpenCV algorithm
@@ -80,8 +89,8 @@ class Vision:
             print("Warning: too many results, raise the threshold.")
             rectangles = rectangles[:max_results]
 
-        if scale_down:
-            rectangles = rectangles * scale_down
+        if self.scale_down:
+            rectangles = rectangles * self.scale_down
         return rectangles
 
     # given a list of [x, y, w, h] rectangles returned by find(), convert those into a list of

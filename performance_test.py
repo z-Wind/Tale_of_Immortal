@@ -50,7 +50,7 @@ def test_vision_scale(benchmark):
     hsv_filter = None
 
     # initialize the Vision class
-    vision = Vision(match_path, threshold, hsv_filter)
+    vision = Vision(match_path, threshold, hsv_filter, scale_down=2)
     # 不同的 process 皆需重建 control gui
     vision.init_control_gui()
 
@@ -65,7 +65,7 @@ def test_vision_scale(benchmark):
         processed_image = vision.apply_hsv_filter(screenshot)
 
         # do object detection
-        rectangles = vision.find(processed_image, scale_down=2)
+        rectangles = vision.find(processed_image)
 
         if rectangles.size != 0:
             targets = vision.get_click_points(rectangles)
