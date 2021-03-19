@@ -35,7 +35,7 @@ class TOMBot:
 
         win32api.SetCursorPos((x, y))
         win32api.mouse_event(down, 0, 0)
-        # sleep(0.01)
+        sleep(0.01)
         win32api.mouse_event(up, 0, 0)
 
     def click_targets(self):

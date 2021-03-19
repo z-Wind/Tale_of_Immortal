@@ -22,6 +22,8 @@ class Vision:
         # https://docs.opencv.org/4.2.0/d4/da8/group__imgcodecs.html
         self.scale_down = scale_down
         self.needle_img = cv.imread(needle_img_path, cv.IMREAD_UNCHANGED)
+        # remove alpha channel
+        self.needle_img = self.needle_img[:, :, :3]
         self.needle_img_scale_down = self.resize(
             self.needle_img, self.scale_down, interpolation=cv.INTER_AREA
         )

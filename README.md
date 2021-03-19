@@ -10,4 +10,4 @@
 
 ## 測試連結
 * tests/whack-a-mole/index.html
-* https://skeletonware.itch.io/balloon-pop
+* https://future-games.itch.io/balloon-battles

@@ -1,3 +1,4 @@
+import os
 import cv2 as cv
 from time import perf_counter, sleep
 from windowcapture import WindowCapture
@@ -57,7 +58,11 @@ def main(
     scale_down,
     click_type,
     ignore_radius,
+    matchTemplate_method=cv.TM_CCOEFF_NORMED,
 ):
+    if not os.path.exists(match_path):
+        raise f"There is no file in {match_path}"
+
     listener = keyboard.Listener(on_release=on_release)
     listener.start()
 
@@ -93,6 +98,7 @@ def main(
                     threshold,
                     hsv_filter,
                     scale_down,
+                    matchTemplate_method,
                     ch_recv_screenshot,
                     ch_send_targets,
                 ),
@@ -125,7 +131,13 @@ def main(
             main.state = State.TERMINATE
         elif main.state == State.DEBUG_INIT:
             wincap = WindowCapture(window_name=window_title, cropped_rectangle=cropped_rectangle)
-            vision = Vision(match_path, threshold, hsv_filter, scale_down=scale_down)
+            vision = Vision(
+                match_path,
+                threshold,
+                hsv_filter,
+                scale_down=scale_down,
+                method=matchTemplate_method,
+            )
             vision.init_control_gui()
             bot = TOMBot(wincap, click_type, ignore_radius)
 
@@ -186,10 +198,20 @@ def get_screenshot(window_title, cropped_rectangle, ch_send_wincap, ch_send_scre
         pre_screenshot = screenshot
 
 
-def img_process(match_path, threshold, hsv_filter, scale_down, ch_recv_screenshot, ch_send_targets):
+def img_process(
+    match_path,
+    threshold,
+    hsv_filter,
+    scale_down,
+    matchTemplate_method,
+    ch_recv_screenshot,
+    ch_send_targets,
+):
     print("Image Process Start...")
     # initialize the Vision class
-    vision = Vision(match_path, threshold, hsv_filter, scale_down=scale_down)
+    vision = Vision(
+        match_path, threshold, hsv_filter, scale_down=scale_down, method=matchTemplate_method
+    )
     # 不同的 process 皆需重建 control gui
     # vision.init_control_gui()
 

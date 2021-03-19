@@ -15,7 +15,7 @@ def test_screenshot(benchmark):
 
 
 def test_vision(benchmark):
-    match_path = "frog.png"
+    match_path = "tests/frog.png"
     threshold = 0.6
     hsv_filter = None
 
@@ -45,7 +45,7 @@ def test_vision(benchmark):
 
 
 def test_vision_scale(benchmark):
-    match_path = "frog.png"
+    match_path = "tests/frog.png"
     threshold = 0.6
     hsv_filter = None
 
