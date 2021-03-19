@@ -262,6 +262,11 @@ class Vision:
         outer_x, outer_y, outer_w, outer_h = outer
         inner_x, inner_y, inner_w, inner_h = inner
 
+        assert outer_w > inner_w or outer_h > inner_h
+
+        if inner_w == 0 or inner_h == 0:
+            return (outer,)
+
         top_h = inner_y - outer_y
         left_w = inner_x - outer_x
         right_w = (outer_x + outer_w) - (inner_x + inner_w)
