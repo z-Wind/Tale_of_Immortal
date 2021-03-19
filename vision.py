@@ -253,3 +253,26 @@ class Vision:
             c[c <= lim] = 0
             c[c > lim] -= amount
         return c
+
+    # create hollow rectangle with 4 (x,y,w,h) by outer rectangle and inner rectangle
+    @staticmethod
+    def hollow_rectangle(outer, inner):
+        outer_x, outer_y, outer_w, outer_h = outer
+        inner_x, inner_y, inner_w, inner_h = inner
+
+        top_h = inner_y - outer_y
+        left_w = inner_x - outer_x
+        right_w = (outer_x + outer_w) - (inner_x + inner_w)
+        bottom_h = (outer_y + outer_h) - (inner_y + inner_h)
+
+        topper = (outer_x, outer_y, outer_w, top_h)
+        lefter = (outer_x, outer_y + top_h, left_w, inner_h)
+        righter = (
+            outer_x + outer_w - right_w,
+            outer_y + top_h,
+            right_w,
+            inner_h,
+        )
+        bottomer = (outer_x, outer_y + outer_h - bottom_h, outer_w, bottom_h)
+
+        return (topper, lefter, righter, bottomer)

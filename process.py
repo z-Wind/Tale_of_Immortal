@@ -148,8 +148,9 @@ def main(
 
             # display the processed image
             cv.imshow("Processed", processed_image)
-            cv.imshow("ScaleDown Needle", vision.needle_img_scale_down)
-            cv.imshow("ScaleDown Processed", scaled_image)
+            if scale_down:
+                cv.imshow("ScaleDown Needle", vision.needle_img_scale_down)
+                cv.imshow("ScaleDown Processed", scaled_image)
             cv.imshow("Matches", output_image)
 
         elif main.state == State.WAIT:

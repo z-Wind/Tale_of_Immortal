@@ -1,0 +1,6 @@
+import vision
+
+
+def test_hollow_rectangle():
+    result = vision.Vision.hollow_rectangle((0, 0, 10, 10), (1, 2, 5, 5))
+    assert result == ((0, 0, 10, 2), (0, 2, 1, 5), (6, 2, 4, 5), (0, 7, 10, 3))
