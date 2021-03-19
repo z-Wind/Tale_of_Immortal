@@ -93,7 +93,7 @@ class Vision:
 
         if self.scale_down:
             rectangles = rectangles * self.scale_down
-        return rectangles
+        return rectangles.astype(int)
 
     # given a list of [x, y, w, h] rectangles returned by find(), convert those into a list of
     # [x, y] positions in the center of those rectangles where we can click on those found items
@@ -274,12 +274,7 @@ class Vision:
 
         topper = (outer_x, outer_y, outer_w, top_h)
         lefter = (outer_x, outer_y + top_h, left_w, inner_h)
-        righter = (
-            outer_x + outer_w - right_w,
-            outer_y + top_h,
-            right_w,
-            inner_h,
-        )
+        righter = (outer_x + outer_w - right_w, outer_y + top_h, right_w, inner_h)
         bottomer = (outer_x, outer_y + outer_h - bottom_h, outer_w, bottom_h)
 
         return (topper, lefter, righter, bottomer)
