@@ -20,6 +20,33 @@ def show_area(window_title, rectangles):
     # these colors are actually BGR
     line_color = (0, 255, 0)
     line_type = cv.LINE_4
+    name = "Area, press 'q' or 'esc' to quit, 'r' to run autoclick, 'c' to clear, 'p' to print"
+    scale_down = 2
+
+    font = cv.FONT_ITALIC
+    font_scale = 1.3
+    font_thickness = 2
+
+    btn_down = False
+    click_down_points = []
+    click_up_points = []
+    dragRectangle = [None, None]
+
+    def draw_circle(event, x, y, flags, param):
+        nonlocal btn_down, dragRectangle, click_down_points, click_up_points
+        if event == cv.EVENT_LBUTTONDOWN:
+            click_down_points.append((x * scale_down, y * scale_down))
+            dragRectangle[0] = (x * scale_down, y * scale_down)
+            btn_down = True
+        elif event == cv.EVENT_LBUTTONUP:
+            click_up_points.append((x * scale_down, y * scale_down))
+            dragRectangle = [None, None]
+            btn_down = False
+        elif event == cv.EVENT_MOUSEMOVE and btn_down:
+            dragRectangle[1] = (x * scale_down, y * scale_down)
+
+    cv.namedWindow(name)
+    cv.setMouseCallback(name, draw_circle)
 
     while True:
         screenshot = wincap.get_screenshot()
@@ -39,17 +66,62 @@ def show_area(window_title, rectangles):
             res = cv.addWeighted(sub_img, 0.5, rect, 0.5, 0.0)
             screenshot[y : y + h, x : x + w] = res
 
+        for down_p, up_p in zip(click_down_points, click_up_points):
+            x1, y1 = down_p
+            x2, y2 = up_p
+            cv.circle(screenshot, (x1, y1), 8, (0, 0, 255), thickness=-1)
+            cv.rectangle(
+                screenshot, (x1, y1), (x2, y2), (0, 0, 255), lineType=line_type, thickness=2
+            )
+            cv.putText(
+                screenshot,
+                f"({x1},{y1},{x2-x1},{y2-y1})",
+                (x1, y1 - 20),
+                font,
+                font_scale,
+                (0, 0, 255),
+                thickness=font_thickness,
+                lineType=cv.LINE_AA,
+            )
+
+        if dragRectangle[0] and dragRectangle[1]:
+            x1, y1 = dragRectangle[0]
+            x2, y2 = dragRectangle[1]
+            cv.rectangle(
+                screenshot, (x1, y1), (x2, y2), (255, 0, 255), lineType=line_type, thickness=2
+            )
+            cv.putText(
+                screenshot,
+                f"({x1},{y1},{x2-x1},{y2-y1})",
+                (x1, y1 - 20),
+                font,
+                font_scale,
+                (255, 0, 255),
+                thickness=font_thickness,
+                lineType=cv.LINE_AA,
+            )
+
         img = cv.resize(screenshot, (w_screen // 2, h_screen // 2), interpolation=cv.INTER_AREA)
-        cv.imshow("Area, press 'q' to quit, 'c' to continue", img)
+        cv.imshow(name, img)
         # waits 1 ms every loop to process
         # imshow() only works with waitKey()
         key = cv.waitKey(1)
-        if key == ord("q"):
+        if key == ord("q") or key == 27:  # Esc key to stop:
             cv.destroyAllWindows()
             exit()
-        elif key == ord("c"):
+        elif key == ord("r"):
             cv.destroyAllWindows()
             break
+        elif key == ord("c"):
+            click_down_points = []
+            click_up_points = []
+            dragRectangle = [None, None]
+        elif key == ord("p"):
+            print("\nrectangles:")
+            for down_p, up_p in zip(click_down_points, click_up_points):
+                x1, y1 = down_p
+                x2, y2 = up_p
+                print(f"({x1},{y1},{x2-x1},{y2-y1})")
 
 
 # 因 window spawn 的緣故
