@@ -45,7 +45,9 @@ class TOMBot:
         # endloop
         # 3. if no target was found return false
         # 4. click on the found target and return true
-        targets = self._targets_ordered_by_distance(self.targets[0])
+
+        # targets = self._targets_ordered_by_distance(self.targets[0])
+        targets = self.targets[0]
         for target in targets:
             # load up the next target in the list and convert those coordinates
             # that are relative to the game screenshot to a position on our

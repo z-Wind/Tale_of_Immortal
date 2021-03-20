@@ -54,7 +54,7 @@ class Vision:
         if self.scale_down:
             haystack_img = self.resize(haystack_img, self.scale_down)
 
-        needle_w, needle_h = needle_img.shape[:2]
+        needle_h, needle_w = needle_img.shape[:2]
         # run the OpenCV algorithm
         result = cv.matchTemplate(haystack_img, needle_img, self.method)
 
