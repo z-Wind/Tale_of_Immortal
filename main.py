@@ -1,11 +1,13 @@
 import os
 import process
 import multiprocessing as mp
-import vision
 import cv2 as cv
 import numpy as np
+import ctypes
+import vision
 from windowcapture import WindowCapture
 from hsvfilter import HsvFilter
+
 
 # Change the working directory to the folder this script is in.
 # Doing this because I'll be putting the files from each video in their own folder on GitHub
@@ -20,7 +22,7 @@ def show_area(window_title, rectangles):
     # these colors are actually BGR
     line_color = (0, 255, 0)
     line_type = cv.LINE_4
-    name = "Area, press 'q' or 'esc' to quit, 'r' to run autoclick, 'c' to clear, 'p' to print"
+    name = "Area, 'q' or 'esc': quit, 'r': run autoclick, 'h': help"
     scale_down = 2
 
     font = cv.FONT_ITALIC
@@ -32,7 +34,10 @@ def show_area(window_title, rectangles):
     click_up_points = []
     dragRectangle = [None, None]
 
-    def draw_circle(event, x, y, flags, param):
+    freeze_mode = False
+    freeze_img = None
+
+    def mouseCallback(event, x, y, flags, param):
         nonlocal btn_down, dragRectangle, click_down_points, click_up_points
         if event == cv.EVENT_LBUTTONDOWN:
             click_down_points.append((x * scale_down, y * scale_down))
@@ -46,10 +51,14 @@ def show_area(window_title, rectangles):
             dragRectangle[1] = (x * scale_down, y * scale_down)
 
     cv.namedWindow(name)
-    cv.setMouseCallback(name, draw_circle)
+    cv.setMouseCallback(name, mouseCallback)
 
     while True:
-        screenshot = wincap.get_screenshot()
+        if freeze_mode:
+            screenshot = np.copy(freeze_img)
+        else:
+            screenshot = wincap.get_screenshot()
+            freeze_img = np.copy(screenshot)
         h_screen, w_screen = screenshot.shape[:2]
 
         for (x, y, w, h) in rectangles:
@@ -122,6 +131,24 @@ def show_area(window_title, rectangles):
                 x1, y1 = down_p
                 x2, y2 = up_p
                 print(f"({x1},{y1},{x2-x1},{y2-y1})")
+        elif key == ord("f"):
+            freeze_mode = not freeze_mode
+        elif key == ord("h"):
+            ctypes.windll.user32.MessageBoxW(
+                0,
+                """
+                'q' or 'esc': quit                
+                'r': autoclick
+                'c': clear recorded rectangles
+                'p': print (x,y,w,h) of rectangles
+                'f': freeze/unfreeze
+                'h': help
+                """,
+                "help",
+                0,
+            )
+        elif key != -1:
+            print("key:", key, chr(key))
 
 
 # 因 window spawn 的緣故
